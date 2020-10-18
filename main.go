@@ -38,17 +38,18 @@ func init() {
 }
 
 func main() {
-	HighScores = []highscore{
-		highscore{ID: 1, Username: "ktrain", Score: 100},
-		highscore{ID: 2, Username: "nnpalmore", Score: 200},
+	HighScores = []HighScore{
+		HighScore{ID: 1, Username: "ktrain", Score: 100},
+		HighScore{ID: 2, Username: "nnpalmore", Score: 200},
 	}
 	handleRequest()
 }
 
 //HighScores is an array for all highscores
-var HighScores []highscore
+var HighScores []HighScore
 
-type highscore struct {
+//HighScore is the structure of the highscore data, primary key gets added differently?
+type HighScore struct {
 	ID       int    `json:"ID"`
 	Username string `json:"username"`
 	Score    int    `json:"score"`
