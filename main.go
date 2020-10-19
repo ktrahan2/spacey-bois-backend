@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -95,7 +96,8 @@ func returnAllHighScores(w http.ResponseWriter, r *http.Request) {
 			log.Fatal(err)
 		}
 		log.Printf("id: %d, username: %s, score: %d", id, username, score)
-		//making multiple slices of a single object instead of one single slice
+		//making multiple slices of a single object instead of one single slice,
+		//can probably refactor to iterate through and push to Highscores variable
 		HighScores := []HighScore{
 			HighScore{ID: id, Username: username, Score: score},
 		}
@@ -111,16 +113,22 @@ func addScores(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, http.StatusText(405), 405)
 	}
 
-	fmt.Println(r)
+	reqBody, _ := ioutil.ReadAll(r.Body)
+	fmt.Fprintf(w, "%v", string(reqBody))
+	var highscore HighScore
+	json.Unmarshal(reqBody, &highscore)
+
+	username := highscore.Username
+	score := highscore.Score
 
 	var err error
 	sqlStatement := `
 	INSERT INTO highscores (username, score)
 	VALUES ($1, $2)`
-	_, err = db.Exec(sqlStatement, "request.body stuff")
+	_, err = db.Exec(sqlStatement, username, score)
 	if err != nil {
 		panic(err)
 	}
 
-	fmt.Fprintf(w, "Add scores hit")
+	// fmt.Fprintf(w, "Add scores hit")
 }
