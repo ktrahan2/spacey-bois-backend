@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -30,9 +31,13 @@ type HighScore struct {
 func main() {
 	connectToDatabase()
 	handleRequest()
+	//defer closes the database whenever this function ends
+	defer db.Close()
 }
 
 func connectToDatabase() {
+
+	var err error
 	host := os.Getenv("HOST")
 	databaseUsername := os.Getenv("USERNAME")
 	password := os.Getenv("PASSWORD")
@@ -42,13 +47,11 @@ func connectToDatabase() {
 	psqlInfo := fmt.Sprintf("host=%s port=%s user=%s "+
 		"password=%s dbname=%s sslmode=disable",
 		host, port, databaseUsername, password, database)
-
-	db, err := sql.Open("postgres", psqlInfo)
+	//doesn't like this after I closed my VS code down. maybe its trying to connect to uncleKy???
+	db, err = sql.Open("postgres", psqlInfo)
 	if err != nil {
 		panic(err)
 	}
-	//defer closes the database whenever this function ends
-	defer db.Close()
 
 	err = db.Ping()
 	if err != nil {
@@ -71,12 +74,17 @@ func homePage(w http.ResponseWriter, r *http.Request) {
 }
 
 func returnAllHighScores(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "GET" {
+		http.Error(w, http.StatusText(405), 405)
+		return
+	}
 
-	//needs sql.Open() to be a global variable
 	rows, err := db.Query("SELECT * FROM highscores")
 	if err != nil {
 		panic(err)
 	}
+	defer rows.Close()
+
 	for rows.Next() {
 		var (
 			id       int
@@ -87,15 +95,32 @@ func returnAllHighScores(w http.ResponseWriter, r *http.Request) {
 			log.Fatal(err)
 		}
 		log.Printf("id: %d, username: %s, score: %d", id, username, score)
+		//making multiple slices of a single object instead of one single slice
 		HighScores := []HighScore{
 			HighScore{ID: id, Username: username, Score: score},
 		}
+
 		fmt.Println(HighScores)
-		// json.NewEncoder(w).Encode(HighScores)
+		json.NewEncoder(w).Encode(HighScores)
 	}
 	fmt.Println("Endpoint hit")
 }
 
 func addScores(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "POST" {
+		http.Error(w, http.StatusText(405), 405)
+	}
+
+	fmt.Println(r)
+
+	var err error
+	sqlStatement := `
+	INSERT INTO highscores (username, score)
+	VALUES ($1, $2)`
+	_, err = db.Exec(sqlStatement, "request.body stuff")
+	if err != nil {
+		panic(err)
+	}
+
 	fmt.Fprintf(w, "Add scores hit")
 }
