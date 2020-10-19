@@ -48,7 +48,7 @@ func connectToDatabase() {
 	psqlInfo := fmt.Sprintf("host=%s port=%s user=%s "+
 		"password=%s dbname=%s sslmode=disable",
 		host, port, databaseUsername, password, database)
-	//doesn't like this after I closed my VS code down. maybe its trying to connect to uncleKy???
+	//doesn't like this after I closed my VS code down. Had to use 'unset PGSYSCONFDIR'
 	db, err = sql.Open("postgres", psqlInfo)
 	if err != nil {
 		panic(err)
@@ -69,12 +69,23 @@ func handleRequest() {
 	log.Fatal(http.ListenAndServe(":7000", nil))
 }
 
+func enableCors(w *http.ResponseWriter) {
+	(*w).Header().Set("Access-Control-Allow-Origin", "*")
+}
+
+//can probably delete this func when finished
 func homePage(w http.ResponseWriter, r *http.Request) {
+
+	enableCors(&w)
+
 	fmt.Fprintf(w, "Homepage")
 	fmt.Println("Endpoint Hit: homePage")
 }
 
 func returnAllHighScores(w http.ResponseWriter, r *http.Request) {
+
+	enableCors(&w)
+
 	if r.Method != "GET" {
 		http.Error(w, http.StatusText(405), 405)
 		return
@@ -85,7 +96,7 @@ func returnAllHighScores(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 	defer rows.Close()
-
+	var highscores []HighScore
 	for rows.Next() {
 		var (
 			id       int
@@ -97,18 +108,17 @@ func returnAllHighScores(w http.ResponseWriter, r *http.Request) {
 		}
 		log.Printf("id: %d, username: %s, score: %d", id, username, score)
 		//making multiple slices of a single object instead of one single slice,
-		//can probably refactor to iterate through and push to Highscores variable
-		HighScores := []HighScore{
-			HighScore{ID: id, Username: username, Score: score},
-		}
-
-		fmt.Println(HighScores)
-		json.NewEncoder(w).Encode(HighScores)
+		//can probably refactor to iterate through and push to Highscores variable, instead of making multiple
+		highscore := HighScore{ID: id, Username: username, Score: score}
+		highscores = append(highscores, highscore)
 	}
-	fmt.Println("Endpoint hit")
+	json.NewEncoder(w).Encode(highscores)
 }
 
 func addScores(w http.ResponseWriter, r *http.Request) {
+
+	enableCors(&w)
+
 	if r.Method != "POST" {
 		http.Error(w, http.StatusText(405), 405)
 	}
