@@ -1,7 +1,7 @@
 package main
 
 import (
-	"encoding/json"
+	"database/sql"
 	"fmt"
 	"log"
 	"net/http"
@@ -10,6 +10,8 @@ import (
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 )
+
+var db *sql.DB
 
 func init() {
 	// loads values from .env into the system
@@ -26,26 +28,34 @@ type HighScore struct {
 }
 
 func main() {
-	psqlInfo()
+	connectToDatabase()
 	handleRequest()
 }
 
-func psqlInfo() {
+func connectToDatabase() {
 	host := os.Getenv("HOST")
-	username := os.Getenv("USERNAME")
+	databaseUsername := os.Getenv("USERNAME")
 	password := os.Getenv("PASSWORD")
-	dbname := os.Getenv("DBNAME")
+	database := os.Getenv("DATABASE")
 	port := os.Getenv("PORT")
 
 	psqlInfo := fmt.Sprintf("host=%s port=%s user=%s "+
 		"password=%s dbname=%s sslmode=disable",
-		host, port, username, password, dbname)
-	fmt.Println(psqlInfo)
-}
+		host, port, databaseUsername, password, database)
 
-func homePage(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "Homepage")
-	fmt.Println("Endpoint Hit: homePage")
+	db, err := sql.Open("postgres", psqlInfo)
+	if err != nil {
+		panic(err)
+	}
+	//defer closes the database whenever this function ends
+	defer db.Close()
+
+	err = db.Ping()
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println("Successfully connected!")
 }
 
 func handleRequest() {
@@ -55,13 +65,35 @@ func handleRequest() {
 	log.Fatal(http.ListenAndServe(":7000", nil))
 }
 
+func homePage(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintf(w, "Homepage")
+	fmt.Println("Endpoint Hit: homePage")
+}
+
 func returnAllHighScores(w http.ResponseWriter, r *http.Request) {
-	HighScores := []HighScore{
-		HighScore{ID: 1, Username: "ktrain", Score: 100},
-		HighScore{ID: 2, Username: "nnpalmore", Score: 200},
+
+	//needs sql.Open() to be a global variable
+	rows, err := db.Query("SELECT * FROM highscores")
+	if err != nil {
+		panic(err)
+	}
+	for rows.Next() {
+		var (
+			id       int
+			username string
+			score    int
+		)
+		if err := rows.Scan(&id, &username, &score); err != nil {
+			log.Fatal(err)
+		}
+		log.Printf("id: %d, username: %s, score: %d", id, username, score)
+		HighScores := []HighScore{
+			HighScore{ID: id, Username: username, Score: score},
+		}
+		fmt.Println(HighScores)
+		// json.NewEncoder(w).Encode(HighScores)
 	}
 	fmt.Println("Endpoint hit")
-	json.NewEncoder(w).Encode(HighScores)
 }
 
 func addScores(w http.ResponseWriter, r *http.Request) {
