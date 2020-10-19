@@ -26,13 +26,21 @@ type HighScore struct {
 }
 
 func main() {
+	psqlInfo()
+	handleRequest()
+}
+
+func psqlInfo() {
 	host := os.Getenv("HOST")
 	username := os.Getenv("USERNAME")
 	password := os.Getenv("PASSWORD")
 	dbname := os.Getenv("DBNAME")
 	port := os.Getenv("PORT")
-	fmt.Println(host, username, password, dbname, port)
-	handleRequest()
+
+	psqlInfo := fmt.Sprintf("host=%s port=%s user=%s "+
+		"password=%s dbname=%s sslmode=disable",
+		host, port, username, password, dbname)
+	fmt.Println(psqlInfo)
 }
 
 func homePage(w http.ResponseWriter, r *http.Request) {
