@@ -71,6 +71,24 @@ func handleRequest() {
 
 func enableCors(w *http.ResponseWriter) {
 	(*w).Header().Set("Access-Control-Allow-Origin", "*")
+	(*w).Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
+
+}
+
+func setupResponse(w *http.ResponseWriter, req *http.Request) {
+	(*w).Header().Set("Access-Control-Allow-Origin", "*")
+	(*w).Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+	(*w).Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
+}
+
+func indexHandler(w http.ResponseWriter, req *http.Request) {
+	setupResponse(&w, req)
+	if (*req).Method == "OPTIONS" {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+
+	// process the request...
 }
 
 //can probably delete this func when finished
@@ -118,10 +136,7 @@ func returnAllHighScores(w http.ResponseWriter, r *http.Request) {
 func addScores(w http.ResponseWriter, r *http.Request) {
 
 	enableCors(&w)
-
-	if r.Method != "POST" {
-		http.Error(w, http.StatusText(405), 405)
-	}
+	setupResponse(&w, r)
 
 	reqBody, _ := ioutil.ReadAll(r.Body)
 	fmt.Fprintf(w, "%v", string(reqBody))
@@ -140,5 +155,4 @@ func addScores(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 
-	// fmt.Fprintf(w, "Add scores hit")
 }
