@@ -4,75 +4,81 @@ Spacey Bois is a text-based adventure game.
 
 # Table Of Contents 
 - [Description](https://github.com/ktrahan2/spacey-bois-backend/tree/main#description)
-- [Example Code](https://github.com/ktrahan2/spacey-bois-frontend/blob/main/README.md#example-code)
-- [Technology Used](https://github.com/ktrahan2/spacey-bois-frontend/blob/main/README.md#technology-used)
-- [Setting up for the Application](https://github.com/ktrahan2/spacey-bois-frontend/blob/main/README.md#setting-up-for-the-application)
-- [Main Features](https://github.com/ktrahan2/spacey-bois-frontend/blob/main/README.md#main-features)
-- [Features in Progress](https://github.com/ktrahan2/spacey-bois-frontend/blob/main/README.md#features-in-progress)
-- [Contact Information](https://github.com/ktrahan2/spacey-bois-frontend/blob/main/README.md#contact-information)
-- [Link to Backend Repo](https://github.com/ktrahan2/spacey-bois-frontend/blob/main/README.md#link-to-backend-repo)
+- [Example Code](https://github.com/ktrahan2/spacey-bois-backend/tree/main#example-code)
+- [Technology Used](https://github.com/ktrahan2/spacey-bois-backend/tree/main#technology-used)
+- [Setting up for the Application](https://github.com/ktrahan2/spacey-bois-backend/tree/main#setting-up-for-the-application)
+- [Main Features](https://github.com/ktrahan2/spacey-bois-backend/tree/main#main-features)
+- [Features in Progress](https://github.com/ktrahan2/spacey-bois-backend/tree/main#features-in-progress)
+- [Contact Information](https://github.com/ktrahan2/spacey-bois-backend/tree/main#contact-information)
+- [Link to Backend Repo](https://github.com/ktrahan2/spacey-bois-backend/tree/main#link-to-frontend-repo)
 
 ## Description
 
-Spacey Bois frontend is made with React-Redux and vanilla CSS. The game is based around a role-playing game called Scum and Villainy. It allows the user to create a character with a name and class type. Then the user is prompted with different options in order to advance the storyline. The storyline prompts are mostly generic but there is an example of one custom prompt showing what happens when a user makes an attack roll. At the end the player is given a score which is then add into the database and rendered on the /highscores route on the frontend. 
+Spacey Bois backend is made with Go as a very simple api. The api will allow highscores to POST into a PSQL database and also GET these entries.
 
 ## Example Code 
 ```
-   const prompt8and9AttackResponse = () => {
-        if (diceResult === 6) {
-            let optionValue1 = "Move the bodies"
-            let optionValue2 = "Help Grips"
-            if (playerWeapon === "Blaster" || playerWeapon === "Krieger Blaster Pistol") {
-                let text = `You fire off a few precision rounds silencing the inspectors before they even move."\n Vapor: 'Wow check out the itchy finger on ${playerName}. I knew there was something about them I liked.'\n Nines: 'We need to get out of here before the station realizes what happened and closes the Jump Gate.\n ${playerName} can you put these bodies back on the Malklaith shuttle or help Grips clean up the Science Bay.'`
-                let response = {
-                    text: text,
-                    optionValues: [optionValue1, optionValue2],
-                    nextPrompt: [12, 13]
-                }
-                return response
-            } else if (playerWeapon === "Psyblade") {
-                let text = `You reveal your Psyblade and cut through the inspectors before they can even let out a sound."\n Vapor: 'Wow check out the itchy finger on ${playerName}. I knew there was something about them I liked.'\n Nines: 'We need to get out of here before the station realizes what happened and closes the Jump Gate.'\n ${playerName} can you put these bodies back on the Malklaith shuttle or help Grips clean up the Science Bay.'`
-                let response = {
-                    text: text,
-                    optionValues: [optionValue1, optionValue2],
-                    nextPrompt: [12, 13]
-                }
-                return response
-            }.....
-    }    
+   func addScores(w http.ResponseWriter, r *http.Request) {
+
+	setupResponse(&w, r)
+	switch r.Method {
+	case "POST":
+		reqBody, _ := ioutil.ReadAll(r.Body)
+		fmt.Fprintf(w, "%v", string(reqBody))
+		var highscore HighScore
+		json.Unmarshal(reqBody, &highscore)
+
+		username := highscore.Username
+		score := highscore.Score
+
+		var err error
+		sqlStatement := `
+			INSERT INTO highscores (username, score)
+			VALUES ($1, $2)`
+		_, err = db.Exec(sqlStatement, username, score)
+		if err != nil {
+			panic(err)
+		}
+	default:
+		//method not available error.
+		http.Error(w, http.StatusText(405), 405)
+	}
+} 
 ```
    
 ```
-   determineHarmTaken = () => {
-        let roll = this.roll6SidedDie()
-        this.props.diceResult(roll)
+  func connectToDatabase() {
 
-        if (roll === 6) {
-        } else if (roll === 5 || roll === 4) {
-            this.setState((prevState) => {
-                return {currentHarm: {
-                    ...prevState.currentHarm,  
-                    levelOne: prevState.currentHarm.levelOne + 1, 
-                }}
-            })
-        } else {
-            this.setState((prevState) => {
-                return {currentHarm: {
-                    ...prevState.currentHarm,  
-                    levelTwo: prevState.currentHarm.levelTwo + 1, 
-                }}
-            })
-        }
-        this.setState({
-            optionType: ""
-        })
-    }
+	var err error
+	host := os.Getenv("HOST")
+	databaseUsername := os.Getenv("USERNAME")
+	password := os.Getenv("PASSWORD")
+	database := os.Getenv("DATABASE")
+	port := os.Getenv("PORT")
+
+	psqlInfo := fmt.Sprintf("host=%s port=%s user=%s "+
+		"password=%s dbname=%s sslmode=disable",
+		host, port, databaseUsername, password, database)
+	//doesn't like this after I closed my VS code down. Had to use 'unset PGSYSCONFDIR'
+	db, err = sql.Open("postgres", psqlInfo)
+	if err != nil {
+		panic(err)
+	}
+
+	err = db.Ping()
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println("Successfully connected!")
+}
 ```
 
 ## Technology Used
 
-- React-Redux
-- CSS
+- Go
+- PSQL
+
 
 
 ## Setting up for the application
@@ -85,19 +91,19 @@ To start the server run
 
 ## Main Features
 
-- Get fetch to retrieve all highscores from database
-- Post fetch to add highscores to the database
+- GET fetch to retrieve all highscores from database
+- POST fetch to add highscores to the database
 
 ## Features in Progress
 
-- Upgrade backend to create tables through go rather than manually.
+- Upgrade backend to create tables through go rather than manually making them in PSQL
 
 ## Contact Information
 
 [Kyle Trahan](https://www.linkedin.com/in/kyle-trahan-8384678b/)
 
 ## Link to Frontend Repo
-  https://github.com/ktrahan2/spacey-bois-frontend
+https://github.com/ktrahan2/spacey-bois-frontend
 
 
 
