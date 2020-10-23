@@ -3,8 +3,7 @@
 Spacey Bois is a text-based adventure game. 
 
 # Table Of Contents 
-- [Description](https://github.com/ktrahan2/spacey-bois-frontend/blob/main/README.md#description)
-- [How It Works](https://github.com/ktrahan2/spacey-bois-frontend/blob/main/README.md#how-it-works)
+- [Description](https://github.com/ktrahan2/spacey-bois-backend/tree/main#description)
 - [Example Code](https://github.com/ktrahan2/spacey-bois-frontend/blob/main/README.md#example-code)
 - [Technology Used](https://github.com/ktrahan2/spacey-bois-frontend/blob/main/README.md#technology-used)
 - [Setting up for the Application](https://github.com/ktrahan2/spacey-bois-frontend/blob/main/README.md#setting-up-for-the-application)
@@ -16,10 +15,6 @@ Spacey Bois is a text-based adventure game.
 ## Description
 
 Spacey Bois frontend is made with React-Redux and vanilla CSS. The game is based around a role-playing game called Scum and Villainy. It allows the user to create a character with a name and class type. Then the user is prompted with different options in order to advance the storyline. The storyline prompts are mostly generic but there is an example of one custom prompt showing what happens when a user makes an attack roll. At the end the player is given a score which is then add into the database and rendered on the /highscores route on the frontend. 
-
-## How It Works
-
-[Spacey Bois](https://youtu.be/mLFRHayBuT4)
 
 ## Example Code 
 ```
