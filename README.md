@@ -10,7 +10,7 @@ Spacey Bois is a text-based adventure game.
 - [Main Features](https://github.com/ktrahan2/spacey-bois-backend/tree/main#main-features)
 - [Features in Progress](https://github.com/ktrahan2/spacey-bois-backend/tree/main#features-in-progress)
 - [Contact Information](https://github.com/ktrahan2/spacey-bois-backend/tree/main#contact-information)
-- [Link to Backend Repo](https://github.com/ktrahan2/spacey-bois-backend/tree/main#link-to-frontend-repo)
+- [Link to Frontend Repo](https://github.com/ktrahan2/spacey-bois-backend/tree/main#link-to-frontend-repo)
 
 ## Description
 
