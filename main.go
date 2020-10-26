@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/gorilla/mux"
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 )
@@ -31,8 +32,9 @@ type HighScore struct {
 
 func main() {
 	connectToDatabase()
+
 	handleRequest()
-	//defer closes the database whenever this function ends
+
 	defer db.Close()
 }
 
@@ -48,7 +50,7 @@ func connectToDatabase() {
 	psqlInfo := fmt.Sprintf("host=%s port=%s user=%s "+
 		"password=%s dbname=%s sslmode=disable",
 		host, port, databaseUsername, password, database)
-	//doesn't like this after I closed my VS code down. Had to use 'unset PGSYSCONFDIR'
+
 	db, err = sql.Open("postgres", psqlInfo)
 	if err != nil {
 		panic(err)
@@ -63,34 +65,24 @@ func connectToDatabase() {
 }
 
 func handleRequest() {
-	http.HandleFunc("/highscores", returnAllHighScores)
-	http.HandleFunc("/addscores", addScores)
-	http.HandleFunc("/", homePage)
-	log.Fatal(http.ListenAndServe(":7000", nil))
+	router := mux.NewRouter()
+	router.HandleFunc("/highscores", returnAllHighScores).Methods("GET")
+	router.HandleFunc("/addscores", addScores).Methods("POST")
+	router.HandleFunc("/addscores", addScores).Methods("OPTIONS")
+	http.ListenAndServe(":7000", router)
 }
 
-func enableCors(w *http.ResponseWriter) {
-	(*w).Header().Set("Access-Control-Allow-Origin", "*")
-}
-
-func setupResponse(w *http.ResponseWriter, req *http.Request) {
+func setupResponse(w *http.ResponseWriter, r *http.Request) {
 	(*w).Header().Set("Access-Control-Allow-Origin", "*")
 	(*w).Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
 	(*w).Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
 }
 
-//can probably delete this func when finished
-func homePage(w http.ResponseWriter, r *http.Request) {
-
-	enableCors(&w)
-
-	fmt.Fprintf(w, "Homepage")
-	fmt.Println("Endpoint Hit: homePage")
-}
-
 func returnAllHighScores(w http.ResponseWriter, r *http.Request) {
 
-	enableCors(&w)
+	setupResponse(&w, r)
+
+	var highscores []HighScore
 
 	if r.Method != "GET" {
 		http.Error(w, http.StatusText(405), 405)
@@ -101,21 +93,14 @@ func returnAllHighScores(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		panic(err)
 	}
+
 	defer rows.Close()
-	var highscores []HighScore
+
 	for rows.Next() {
-		var (
-			id       int
-			username string
-			score    int
-		)
-		if err := rows.Scan(&id, &username, &score); err != nil {
+		var highscore HighScore
+		if err := rows.Scan(&highscore.ID, &highscore.Username, &highscore.Score); err != nil {
 			log.Fatal(err)
 		}
-		log.Printf("id: %d, username: %s, score: %d", id, username, score)
-		//making multiple slices of a single object instead of one single slice,
-		//can probably refactor to iterate through and push to Highscores variable, instead of making multiple
-		highscore := HighScore{ID: id, Username: username, Score: score}
 		highscores = append(highscores, highscore)
 	}
 	json.NewEncoder(w).Encode(highscores)
@@ -124,13 +109,17 @@ func returnAllHighScores(w http.ResponseWriter, r *http.Request) {
 func addScores(w http.ResponseWriter, r *http.Request) {
 
 	setupResponse(&w, r)
+
 	switch r.Method {
+	case "OPTIONS":
+		w.WriteHeader(http.StatusOK)
+		return
 	case "POST":
 		reqBody, _ := ioutil.ReadAll(r.Body)
+		log.Println(r)
 		fmt.Fprintf(w, "%v", string(reqBody))
 		var highscore HighScore
 		json.Unmarshal(reqBody, &highscore)
-
 		username := highscore.Username
 		score := highscore.Score
 
@@ -143,7 +132,6 @@ func addScores(w http.ResponseWriter, r *http.Request) {
 			panic(err)
 		}
 	default:
-		//method not available error.
 		http.Error(w, http.StatusText(405), 405)
 	}
 
