@@ -1,7 +1,6 @@
 package main
 
 import (
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -10,11 +9,12 @@ import (
 	"os"
 
 	"github.com/gorilla/mux"
+	"github.com/jinzhu/gorm"
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 )
 
-var db *sql.DB
+var db *gorm.DB
 
 func init() {
 	// loads values from .env into the system
@@ -25,14 +25,22 @@ func init() {
 
 //HighScore is the structure of the highscore data
 type HighScore struct {
+	gorm.Model
+	//gorm assumes my ID is the primary id field
 	ID       int    `json:"ID"`
 	Username string `json:"username"`
 	Score    int    `json:"score"`
 }
 
+var (
+	highscores = []HighScore{
+		{Username: "me", Score: 900},
+	}
+)
+
 func main() {
 	connectToDatabase()
-
+	db.AutoMigrate(&HighScore{})
 	handleRequest()
 
 	defer db.Close()
@@ -51,15 +59,15 @@ func connectToDatabase() {
 		"password=%s dbname=%s sslmode=disable",
 		host, port, databaseUsername, password, database)
 
-	db, err = sql.Open("postgres", psqlInfo)
+	db, err = gorm.Open("postgres", psqlInfo)
 	if err != nil {
 		panic(err)
 	}
 
-	err = db.Ping()
-	if err != nil {
-		panic(err)
-	}
+	// err = db.Ping()
+	// if err != nil {
+	// 	panic(err)
+	// }
 
 	fmt.Println("Successfully connected!")
 }
